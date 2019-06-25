@@ -1,7 +1,8 @@
 # reagent-interop-with-react-taro
 
 
-[Source](http://reagent-project.github.io/docs/master/InteropWithReact.html "Permalink to Interop with React")
+* [Reagent Interop With React](http://reagent-project.github.io/docs/master/InteropWithReact.html "Permalink to Interop with React")
+* [Taro](https://github.com/NervJS/taro)
 
 # Interop with React
 
@@ -13,31 +14,31 @@ The `reagent.core/create-element` function simply calls React's `createElement` 
 
 As an example, here are four ways to create the same element:
     
-     ```clojure
-    (defn integration []
-      [:div
-       [:div.foo "Hello " [:strong "world"]]
-    
-       (r/create-element "div"
-                         #js{:className "foo"}
-                         "Hello "
-                         (r/create-element "strong"
-                                            #js{}
-                                            "world"))
-    
-       (r/create-element "div"
-                         #js{:className "foo"}
-                         "Hello "
-                         (r/as-element [:strong "world"]))
-    
-       [:div.foo "Hello " (r/create-element "strong"
-                                            #js{}
-                                            "world")]])
-    
-    (defn mount-root []
-      (reagent/render [integration]
-        (.getElementById js/document "app")))
-     ```
+```clojure
+(defn integration []
+ [:div
+  [:div.foo "Hello " [:strong "world"]]
+
+  (r/create-element "div"
+                    #js{:className "foo"}
+                    "Hello "
+                    (r/create-element "strong"
+                                       #js{}
+                                       "world"))
+
+  (r/create-element "div"
+                    #js{:className "foo"}
+                    "Hello "
+                    (r/as-element [:strong "world"]))
+
+  [:div.foo "Hello " (r/create-element "strong"
+                                       #js{}
+                                       "world")]])
+
+(defn mount-root []
+ (reagent/render [integration]
+   (.getElementById js/document "app")))
+```
 
 This works because `reagent/render` itself expects (1) a React element or (2) a Hiccup form. If passed an element, it just uses it. If passed a Hiccup, it creats a (cached) React component and then creates an element from that component.
 
@@ -49,47 +50,47 @@ The `reagent.core/as-element` function creates a React element from a Hiccup for
 
 The function `reagent/adapt-react-class` will turn a React Component into something that can be placed into the first position of a Hiccup form, as if it were a Reagent function. Take, for example the react-flip-move library and assume that it has been properly imported as a React Component called `FlipMove`. By wrapping FlipMove with `adapt-react-class`, we can use it in a Hiccup form:
     
-     ```clojure
-    (defn top-articles [articles]
-      [(reagent/adapt-react-class FlipMove)
-       {:duration 750
-        :easing "ease-out"}
-       articles]
-    ```
+```clojure
+(defn top-articles [articles]
+  [(reagent/adapt-react-class FlipMove)
+   {:duration 750
+    :easing "ease-out"}
+   articles]
+```
 
 There is also a convenience mechanism `:>` (colon greater-than) that shortens this and avoid some parenthesis:
     
-     ```clojure
-    (defn top-articles [articles]
-      [:> FlipMove
-       {:duration 750
-        :easing "ease-out"}
-       articles]
-     ```
+```clojure
+(defn top-articles [articles]
+ [:> FlipMove
+  {:duration 750
+   :easing "ease-out"}
+  articles]
+```
 
 This is the equivalent JavaScript:
     
-     ```js
-    const TopArticles = ({ articles }) => (
-      
-        {articles}
-      
-    );
-    ```
+```js
+const TopArticles = ({ articles }) => (
+  
+    {articles}
+  
+);
+```
 
 ## Creating React Components from Reagent "Components"
 
 The `reagent/reactify-component` will take a Form-1, Form-2, or Form-3 reagent "component". For example:
     
-    ``` clojure
-    (defn exported [props]
-      [:div "Hi, " (:name props)])
-    
-    (def react-comp (r/reactify-component exported))
-    
-    (defn could-be-jsx []
-      (r/create-element react-comp #js{:name "world"}))
-    ```
+``` clojure
+(defn exported [props]
+  [:div "Hi, " (:name props)])
+
+(def react-comp (r/reactify-component exported))
+
+(defn could-be-jsx []
+  (r/create-element react-comp #js{:name "world"}))
+```
 
 Note:
 
@@ -99,37 +100,37 @@ Note:
 
 Some React libraries use the decorator pattern: a React component which takes a component as an argument and returns a new component as its result. One example is the React DnD library. We will need to use both `adapt-react-class` and `reactify-component` to move back and forth between React and reagent:
     
-     ```clojure
-    (def react-dnd-component
-      (let [decorator (DragDropContext HTML5Backend)]
-        (reagent/adapt-react-class
-          (decorator (reagent/reactify-component top-level-component)))))
-    ```
+```clojure
+(def react-dnd-component
+  (let [decorator (DragDropContext HTML5Backend)]
+    (reagent/adapt-react-class
+      (decorator (reagent/reactify-component top-level-component)))))
+```
 
 This is the equivalent JavaScript:
     
-     ```js
-    import HTML5Backend from 'react-dnd-html5-backend';
-    import { DragDropContext } from 'react-dnd';
-    
-    class TopLevelComponent {
-      /* ... */
-    }
-    
-    export default DragDropContext(HTML5Backend)(TopLevelComponent);
-    ```
+```js
+import HTML5Backend from 'react-dnd-html5-backend';
+import { DragDropContext } from 'react-dnd';
+
+class TopLevelComponent {
+  /* ... */
+}
+
+export default DragDropContext(HTML5Backend)(TopLevelComponent);
+```
 
 ## Example: Function-as-child Components
 
 Some React components expect a function as their only child. React AutoSizer is one such example.
     
-     ```clojure
-    [(reagent/adapt-react-class AutoSizer)
-     {}
-     (fn [dims]
-      (let [dims (js->clj dims :keywordize-keys true)]
-       (reagent/as-element [my-component (:height dims)])))]
-     ```
+```clojure
+[(reagent/adapt-react-class AutoSizer)
+ {}
+ (fn [dims]
+  (let [dims (js->clj dims :keywordize-keys true)]
+   (reagent/as-element [my-component (:height dims)])))]
+```
 
 ## Getting props and children of current component
 
@@ -142,24 +143,29 @@ When interacting with native React components, it may be helpful to access props
 Beware that `current-component` is only valid in component functions, and must be called outside of e.g. event handlers and `for` expressions, so it's safest to always put the call at the top, as in `my-div` here:
     
     
-    ```clojure 
-    (ns example
-      (:require [reagent.core :as r]))
-    
-    (defn my-div []
-      (let [this (r/current-component)]
-        (into [:div.custom (r/props this)]
-              (r/children this))))
-    
-    (defn call-my-div []
-      [:div
-        [my-div "Some text."]
-        [my-div {:style {:font-weight 'bold}}
-          [:p "Some other text in bold."]]])
-     ```
+```clojure 
+(ns example
+  (:require [reagent.core :as r]))
+
+(defn my-div []
+  (let [this (r/current-component)]
+    (into [:div.custom (r/props this)]
+          (r/children this))))
+
+(defn call-my-div []
+  [:div
+    [my-div "Some text."]
+    [my-div {:style {:font-weight 'bold}}
+      [:p "Some other text in bold."]]])
+```
 
 ## React Features
 
+[React Features and how to use them in Reagent](http://reagent-project.github.io/docs/master/ReactFeatures.html)
+
 ## Examples
 
+[Material-UI](http://reagent-project.github.io/docs/examples/material-ui/src/example/core.cljs)
+
+[React-sortable-hoc](http://reagent-project.github.io/docs/examples/react-sortable-hoc/src/example/core.cljs)
     
