@@ -3,6 +3,7 @@
 
 * [Reagent Interop With React](http://reagent-project.github.io/docs/master/InteropWithReact.html "Permalink to Interop with React")
 * [Taro](https://github.com/NervJS/taro)
+* [Reagent demo](https://github.com/reagent-project/reagent/tree/master/demo), [Reagent doc](https://github.com/reagent-project/reagent/tree/master/doc), [Reagent examples](https://github.com/reagent-project/reagent/tree/master/examples)
 
 # Interop with React
 
@@ -165,7 +166,8 @@ Beware that `current-component` is only valid in component functions, and must b
 
 ## Examples
 
-[Material-UI](http://reagent-project.github.io/docs/examples/material-ui/src/example/core.cljs)
+[Material-UI](https://github.com/reagent-project/reagent/blob/master/doc/examples/material-ui.md)
 
-[React-sortable-hoc](http://reagent-project.github.io/docs/examples/react-sortable-hoc/src/example/core.cljs)
+[React-sortable-hoc](https://github.com/reagent-project/reagent/blob/master/examples/react-sortable-hoc/src/example/core.cljs)
+
     
