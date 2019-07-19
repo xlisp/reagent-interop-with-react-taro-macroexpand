@@ -84,6 +84,9 @@ const TopArticles = ({ articles }) => (
 The `reagent/reactify-component` will take a Form-1, Form-2, or Form-3 reagent "component". For example:
     
 ``` clojure
+;; 创建一个组件基本方法 (def component (r/reactify-component (fn [props] ..)))
+;; 创建一个element基本方法 (r/create-element component #js{:name "world"})
+;; 其他element创建 (apply r/create-element mui/TextField props (map r/as-element children))
 (defn exported [props]
   [:div "Hi, " (:name props)])
 
@@ -206,7 +209,7 @@ Beware that `current-component` is only valid in component functions, and must b
             [clojure.string :as str]))
 
 ;; material ui TextField的例子: https://github.com/reagent-project/reagent/blob/master/doc/examples/material-ui.md
-(def text-field-1 (reagent/adapt-react-class mui/TextField))
+(def text-field-1 (reagent/adapt-react-class mui/TextField)) ;; 等效于React的jsx标签<TextField ...> 或者 等效于 [:> mui/TextField ...]
 (def value (reagent/atom ""))
 (def input-component-1
   (reagent/reactify-component
@@ -214,6 +217,12 @@ Beware that `current-component` is only valid in component functions, and must b
      [:input (-> props
                  (assoc :ref (:inputRef props))
                  (dissoc :inputRef))])))
+
+;; 可以直接被挂载到div上面
+[text-field-1
+      {:value @value
+       :on-change #(reset! value (.. % -target -value))
+       :InputProps {:inputComponent input-component-1}}]
                  
 ```
 
