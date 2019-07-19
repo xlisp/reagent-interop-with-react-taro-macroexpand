@@ -31,6 +31,13 @@ As an example, here are four ways to create the same element:
                     #js{:className "foo"}
                     "Hello "
                     (r/as-element [:strong "world"]))
+;;(r/as-element [:strong "world"])
+;; => #js {"$$typeof" "Symbol(react.element)", :type "strong", :key nil, :ref nil, :props #js {:children "world"}, :_owner nil, :_store #js {}}
+
+;; create-element 
+;;#js {"$$typeof" "Symbol(react.element)", :type "div", :key nil, :ref nil, :props #js {:className "foo",
+;;                                                                                      :children #js ["Hello "
+;;           #js {"$$typeof" "Symbol(react.element)", :type "strong", :key nil, :ref nil, :props #js {:children "world"}, :_owner nil, :_store #js {}}]}, :_owner nil, :_store #js {}}
 
   [:div.foo "Hello " (r/create-element "strong"
                                        #js{}
