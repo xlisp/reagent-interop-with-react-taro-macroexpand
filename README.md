@@ -194,9 +194,33 @@ Beware that `current-component` is only valid in component functions, and must b
                           (. js/document (getElementById "app")))
 ```
 
+* 文本输入框
+
+```clojure
+(ns example
+  (:require [reagent.core  :as reagent]
+            [re-frame.core :refer [subscribe dispatch]]
+            ["material-ui" :as mui]
+            ["material-ui-icons" :as mui-icons]
+            [reagent.impl.template :as rtpl]
+            [clojure.string :as str]))
+
+;; material ui TextField的例子: https://github.com/reagent-project/reagent/blob/master/doc/examples/material-ui.md
+(def text-field-1 (reagent/adapt-react-class mui/TextField))
+(def value (reagent/atom ""))
+(def input-component-1
+  (reagent/reactify-component
+   (fn [props]
+     [:input (-> props
+                 (assoc :ref (:inputRef props))
+                 (dissoc :inputRef))])))
+                 
+```
+
 * 表单提交
 
 ```clojure
+
 (defonce text-jedi-state (reagent/atom "Wage peace."))
 (defonce text-sith-state (reagent/atom "Anger is useful—unless it is used against you."))
 
