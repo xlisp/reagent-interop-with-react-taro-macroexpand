@@ -121,16 +121,12 @@
   that any Reagent hiccup forms must be processed with as-element. For example
   like this:
 
-  ```cljs
   (r/create-element \"div\" #js{:className \"foo\"}
     \"Hi \" (r/as-element [:strong \"world!\"])
-  ```
 
   which is equivalent to
 
-  ```cljs
-  [:div.foo \"Hi\" [:strong \"world!\"]]
-  ```"
+  [:div.foo \"Hi\" [:strong \"world!\"]]   "
   ([type]
    (create-element type nil))
   ([type props]
@@ -197,6 +193,17 @@
   [this]
   (assert-component this)
   (comp/get-props this))
+
+;; ;;;;;;;;;;;;;impl
+(defn adapt-react-class
+  [c]
+  (->NativeWrapper c nil nil))
+(deftype NativeWrapper [tag id className])  
+;; ;;
+(defn dom-node
+  "Returns the root DOM node of a mounted component."
+  [this]
+  (react-dom/findDOMNode this))
   
 ```
 
