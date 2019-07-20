@@ -384,6 +384,51 @@ const TopArticles = ({ articles }) => (
 );
 ```
 
+```clojure
+;; src/reagent/impl/template.cljs
+(defn str-coll [coll]
+  (if (dev?)
+    (str (prewalk (fn [x]
+                    (if (fn? x)
+                      (let [n (util/fun-name x)]
+                        (case n "" x (symbol n)))
+                      x)) coll))
+    (str coll)))
+
+(defn hiccup-err [v & msg]
+  (str (apply str msg) ": " (str-coll v) "\n" (comp/comp-name)))
+
+(defn vec-to-elem [v]
+  (assert (pos? (count v)) (hiccup-err v "Hiccup form should not be empty"))
+  (let [tag (nth v 0 nil)]
+    (assert (valid-tag? tag) (hiccup-err v "Invalid Hiccup form"))
+    (cond
+      (keyword-identical? :<> tag)
+      (fragment-element v)
+
+      (hiccup-tag? tag)
+      (let [n (name tag)
+            pos (.indexOf n ">")]
+        (case pos
+          -1 (native-element (cached-parse n) v 1)
+          0 (let [component (nth v 1 nil)]
+              ;; Support [:> component ...]
+              (assert (= ">" n) (hiccup-err v "Invalid Hiccup tag"))
+              (native-element (->HiccupTag component nil nil nil) v 2))
+          ;; Support extended hiccup syntax, i.e :div.bar>a.foo
+          ;; Apply metadata (e.g. :key) to the outermost element.
+          ;; Metadata is probably used only with sequeneces, and in that case
+          ;; only the key of the outermost element matters.
+          (recur (with-meta [(subs n 0 pos)
+                             (assoc (with-meta v nil) 0 (subs n (inc pos)))]
+                            (meta v)))))
+
+      (instance? NativeWrapper tag)
+      (native-element tag v 1)
+
+      :else (reag-element tag v))))
+```
+
 ## Creating React Components from Reagent "Components": React组件就是函数复用的思想,写一个组件可以复用组合
 
 The `reagent/reactify-component` will take a Form-1, Form-2, or Form-3 reagent "component". For example:
