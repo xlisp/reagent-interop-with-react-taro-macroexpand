@@ -8,7 +8,7 @@
 * [Taro](https://github.com/NervJS/taro)
 * [Reagent demo](https://github.com/reagent-project/reagent/tree/master/demo), [Reagent doc](https://github.com/reagent-project/reagent/tree/master/doc), [Reagent examples](https://github.com/reagent-project/reagent/tree/master/examples)
 
-# 领域化macroexpand + 万能的数据结构S表达式的List, 通过代码语义搜索reagent来翻译React代码: 改变语法本身来快速入侵新的其它领域
+# 领域化macroexpand + 万能的数据结构S表达式的List, 通过代码语义搜索reagent来翻译React代码(代码语义搜索是最好的文档): 改变语法本身来快速入侵新的其它领域
 
 ```clojure
 (ns reagent.ratom
