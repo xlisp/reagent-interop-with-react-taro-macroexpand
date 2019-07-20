@@ -223,7 +223,84 @@ Let's call it an "externs file"!
   "Returns the root DOM node of a mounted component."
   [this]
   (react-dom/findDOMNode this))
-  
+;; ;;;;;;;;;;;; reactify-component的简介接口的背后,组件就是为了实现函数式思想的复用组合 ;;;;;;;;;;;;;;;
+;; 强大的 [goog.object :as gobj] 
+(defn create-class
+  "Creates JS class based on provided Clojure map.
+
+  Map keys should use `React.Component` method names (https://reactjs.org/docs/react-component.html),
+  and can be provided in snake-case or camelCase.
+  Constructor function is defined using key `:getInitialState`.
+
+  React built-in static methods or properties are automatically defined as statics."
+  [body]
+  {:pre [(map? body)]}
+  (let [body (cljsify body)
+        methods (map-to-js (apply dissoc body :displayName :getInitialState
+                                  :render :reagentRender
+                                  built-in-static-method-names))
+        static-methods (map-to-js (select-keys body built-in-static-method-names))
+        display-name (:displayName body)
+        construct (:getInitialState body)
+        cmp (fn [props context updater]
+              (this-as this
+                (.call react/Component this props context updater)
+                (when construct
+                  (construct this))
+                this))]
+
+    (gobj/extend (.-prototype cmp) (.-prototype react/Component) methods)
+
+    ;; These names SHOULD be mangled by Closure so we can't use goog/extend
+
+    (when (:render body)
+      (set! (.-render (.-prototype cmp)) (:render body)))
+
+    (when (:reagentRender body)
+      (set! (.-reagentRender (.-prototype cmp)) (:reagentRender body)))
+
+    (when (:cljsLegacyRender body)
+      (set! (.-cljsLegacyRender (.-prototype cmp)) (:cljsLegacyRender body)))
+
+    (gobj/extend cmp react/Component static-methods)
+
+    (when display-name
+      (set! (.-displayName cmp) display-name)
+      (set! (.-cljs$lang$ctorStr cmp) display-name)
+      (set! (.-cljs$lang$ctorPrWriter cmp)
+            (fn [this writer opt]
+              (cljs.core/-write writer display-name))))
+
+    (set! (.-cljs$lang$type cmp) true)
+    (set! (.. cmp -prototype -constructor) cmp)
+
+    cmp))
+    
+(defn fn-to-class [f]
+  (assert-callable f)
+  (warn-unless (not (and (react-class? f)
+                         (not (reagent-class? f))))
+               "Using native React classes directly in Hiccup forms "
+               "is not supported. Use create-element or "
+               "adapt-react-class instead: " (or (util/fun-name f)
+                                                 f)
+               (comp-name))
+  (if (reagent-class? f)
+    (cache-react-class f f)
+    (let [spec (meta f)
+          withrender (assoc spec :reagent-render f)
+          res (create-class withrender)]
+      (cache-react-class f res))))
+
+(defn as-class [tag]
+  (if-some [cached-class (cached-react-class tag)]
+    cached-class
+    (fn-to-class tag)))
+
+(defn reactify-component [comp]
+  (if (react-class? comp)
+    comp
+    (as-class comp)))
 ```
 
 # Interop with React
