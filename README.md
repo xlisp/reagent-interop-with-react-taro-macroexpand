@@ -1,6 +1,25 @@
 # reagent-interop-with-react-taro: 网页和安卓和iOS的React Native和微信小程序taro的同时编译输出, taro只不过是类react语法编译输出为wxss编译输出相同的js,React只不过是jsx编译输出为js
 
 * 思想：先跑起来安卓的Java代码，然后用互操作来逐一替换为Clojure
+
+#### [Motivation](https://github.com/binaryage/cljs-oops)
+
+> I don't always do Javascript interops, but when I do, I call them by names.
+>
+> -- <cite>Darwin (with sunglasses on)</cite>
+
+ClojureScript developers should quickly learn how to inter-operate with native Javascript objects via [the dot operator][1].
+This was modelled to closely follow [Clojure's Java interop][4] story.
+
+For example, the ClojureScript form `(.-nativeProp obj)` will compile to `obj.nativeProp` in Javascript.
+
+It works pretty well [during development][3] but there is a catch! When you naively write code like that, it might
+not survive [advanced optimizations][2]. Closure Compiler needs some information about which property names are safe to rename
+and which cannot be renamed because they might be referenced externally or dynamically via strings.
+
+Someone at Google had a quick and bad idea. We could provide a separate file which would describe this information.
+Let's call it an "externs file"!
+
 * 一个最快跑起来的完整的CURD的Rails + React + Material UI 的 CURD的最简例子
 * 如何兴趣转移? 学习转移之前最重要的: 不可变数据结构(响应式编程)this.state, React组件的函数复用思想
 
