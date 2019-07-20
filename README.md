@@ -88,7 +88,7 @@ const TopArticles = ({ articles }) => (
 );
 ```
 
-## Creating React Components from Reagent "Components"
+## Creating React Components from Reagent "Components": React组件就是函数复用的思想,写一个组件可以复用组合
 
 The `reagent/reactify-component` will take a Form-1, Form-2, or Form-3 reagent "component". For example:
     
