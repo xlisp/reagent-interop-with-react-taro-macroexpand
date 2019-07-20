@@ -8,6 +8,18 @@
 * [Taro](https://github.com/NervJS/taro)
 * [Reagent demo](https://github.com/reagent-project/reagent/tree/master/demo), [Reagent doc](https://github.com/reagent-project/reagent/tree/master/doc), [Reagent examples](https://github.com/reagent-project/reagent/tree/master/examples)
 
+# 领域化macroexpand + 万能的数据结构S表达式的List, 通过代码语义搜索reagent来翻译React代码
+
+```clojure
+(defmacro with-let
+  "Bind variables as with let, except that when used in a component
+  the bindings are only evaluated once. Also takes an optional finally
+  clause at the end, that is executed when the component is
+  destroyed."
+  [bindings & body]
+  `(ra/with-let ~bindings ~@body))
+```
+
 # Interop with React
 
 A little understanding of what Reagent is doing really helps when trying to use React libraries and reagent together.
