@@ -1,7 +1,8 @@
-# reagent-interop-with-react-taro: 网页和安卓和iOS的React Native和微信小程序taro的同时编译输出, taro只不过是wxss编译输出为js,React只不过是jsx编译输出为js
+# reagent-interop-with-react-taro: 网页和安卓和iOS的React Native和微信小程序taro的同时编译输出, taro只不过是类react语法编译输出为wxss编译输出相同的js,React只不过是jsx编译输出为js
 
 * 思想：先跑起来安卓的Java代码，然后用互操作来逐一替换为Clojure
 * 一个最快跑起来的完整的CURD的Rails + React + Material UI 的 CURD的最简例子
+* 如何兴趣转移? 学习转移之前最重要的: 不可变数据结构(响应式编程)this.state, React组件的函数复用思想
 
 * [Reagent Interop With React](http://reagent-project.github.io/docs/master/InteropWithReact.html "Permalink to Interop with React")
 * [Taro](https://github.com/NervJS/taro)
