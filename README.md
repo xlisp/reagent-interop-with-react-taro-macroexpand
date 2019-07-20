@@ -8,9 +8,87 @@
 * [Taro](https://github.com/NervJS/taro)
 * [Reagent demo](https://github.com/reagent-project/reagent/tree/master/demo), [Reagent doc](https://github.com/reagent-project/reagent/tree/master/doc), [Reagent examples](https://github.com/reagent-project/reagent/tree/master/examples)
 
-# 领域化macroexpand + 万能的数据结构S表达式的List, 通过代码语义搜索reagent来翻译React代码
+# 领域化macroexpand + 万能的数据结构S表达式的List, 通过代码语义搜索reagent来翻译React代码: 改变语法本身来快速入侵新的其它领域
 
 ```clojure
+(ns reagent.ratom
+  (:refer-clojure :exclude [run!])
+  (:require [reagent.debug :as d]))
+
+(defmacro reaction [& body]
+  `(reagent.ratom/make-reaction
+    (fn [] ~@body)))
+
+(defmacro run!
+  "Runs body immediately, and runs again whenever atoms deferenced in the body change. Body should side effect."
+  [& body]
+  `(let [co# (reagent.ratom/make-reaction (fn [] ~@body)
+                                         :auto-run true)]
+     (deref co#)
+     co#))
+
+; taken from cljs.core
+; https://github.com/binaryage/cljs-oops/issues/14
+(defmacro unchecked-aget
+  ([array idx]
+   (list 'js* "(~{}[~{}])" array idx))
+  ([array idx & idxs]
+   (let [astr (apply str (repeat (count idxs) "[~{}]"))]
+     `(~'js* ~(str "(~{}[~{}]" astr ")") ~array ~idx ~@idxs))))
+
+; taken from cljs.core
+; https://github.com/binaryage/cljs-oops/issues/14
+(defmacro unchecked-aset
+  ([array idx val]
+   (list 'js* "(~{}[~{}] = ~{})" array idx val))
+  ([array idx idx2 & idxv]
+   (let [n (dec (count idxv))
+         astr (apply str (repeat n "[~{}]"))]
+     `(~'js* ~(str "(~{}[~{}][~{}]" astr " = ~{})") ~array ~idx ~idx2 ~@idxv))))
+
+(defmacro with-let [bindings & body]
+  (assert (vector? bindings)
+          (str "with-let bindings must be a vector, not "
+               (pr-str bindings)))
+  (let [v (gensym "with-let")
+        k (keyword v)
+        init (gensym "init")
+        bs (into [init `(zero? (alength ~v))]
+                 (map-indexed (fn [i x]
+                                (if (even? i)
+                                  x
+                                  (let [j (quot i 2)]
+                                    `(if ~init
+                                       (unchecked-aset ~v ~j ~x)
+                                       (unchecked-aget ~v ~j)))))
+                              bindings))
+        [forms destroy] (let [fin (last body)]
+                          (if (and (list? fin)
+                                   (= 'finally (first fin)))
+                            [(butlast body) `(fn [] ~@(rest fin))]
+                            [body nil]))
+        add-destroy (when destroy
+                      `(let [destroy# ~destroy]
+                         (if (reagent.ratom/reactive?)
+                           (when (nil? (.-destroy ~v))
+                             (set! (.-destroy ~v) destroy#))
+                           (destroy#))))
+        asserting (if *assert* true false)]
+    `(let [~v (reagent.ratom/with-let-values ~k)]
+       (when ~asserting
+         (when-some [^clj c# reagent.ratom/*ratom-context*]
+           (when (== (.-generation ~v) (.-ratomGeneration c#))
+             (d/error "Warning: The same with-let is being used more "
+                      "than once in the same reactive context."))
+           (set! (.-generation ~v) (.-ratomGeneration c#))))
+       (let ~bs
+         (let [res# (do ~@forms)]
+           ~add-destroy
+           res#)))))
+           
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(ns reagent.core
+  (:require [reagent.ratom :as ra]))
 (defmacro with-let
   "Bind variables as with let, except that when used in a component
   the bindings are only evaluated once. Also takes an optional finally
@@ -18,6 +96,108 @@
   destroyed."
   [bindings & body]
   `(ra/with-let ~bindings ~@body))
+  
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;             
+(ns reagent.core
+  (:require-macros [reagent.core]) ;; 一个with-let宏
+  (:refer-clojure :exclude [partial atom flush]) ;;避免和clojure自身的clojure冲突
+  (:require [react :as react]
+            [reagent.impl.template :as tmpl]
+            [reagent.impl.component :as comp]
+            [reagent.impl.util :as util]
+            [reagent.impl.batching :as batch]
+            [reagent.ratom :as ratom]            
+            ;; 下面是宏最多的地方
+            [reagent.debug :as deb :refer-macros [dbg prn
+                                                  assert-some assert-component
+                                                  assert-js-object assert-new-state
+                                                  assert-callable]]
+            [reagent.dom :as dom]))
+            
+(defn create-element
+  "Create a native React element, by calling React.createElement directly.
+
+  That means the second argument must be a javascript object (or nil), and
+  that any Reagent hiccup forms must be processed with as-element. For example
+  like this:
+
+  ```cljs
+  (r/create-element \"div\" #js{:className \"foo\"}
+    \"Hi \" (r/as-element [:strong \"world!\"])
+  ```
+
+  which is equivalent to
+
+  ```cljs
+  [:div.foo \"Hi\" [:strong \"world!\"]]
+  ```"
+  ([type]
+   (create-element type nil))
+  ([type props]
+   (assert-js-object props)
+   (react/createElement type props))
+  ([type props child]
+   (assert-js-object props)
+   (react/createElement type props child))
+  ([type props child & children]
+   (assert-js-object props)
+   (apply react/createElement type props child children)))
+
+(defn as-element
+  "Turns a vector of Hiccup syntax into a React element. Returns form
+  unchanged if it is not a vector."
+  [form]
+  (tmpl/as-element form))
+
+(defn adapt-react-class
+  "Returns an adapter for a native React class, that may be used
+  just like a Reagent component function or class in Hiccup forms."
+  [c]
+  (assert-some c "Component")
+  (tmpl/adapt-react-class c))
+
+(defn reactify-component
+  "Returns an adapter for a Reagent component, that may be used from
+  React, for example in JSX. A single argument, props, is passed to
+  the component, converted to a map."
+  [c]
+  (assert-some c "Component")
+  (comp/reactify-component c))
+
+(defn render
+  "Render a Reagent component into the DOM. The first argument may be
+  either a vector (using Reagent's Hiccup syntax), or a React element.
+  The second argument should be a DOM node.
+
+  Optionally takes a callback that is called when the component is in place.
+
+  Returns the mounted component instance."
+  ([comp container]
+   (dom/render comp container))
+  ([comp container callback]
+   (dom/render comp container callback)))
+
+(defn state
+  "Returns the state of a component, as set with replace-state or set-state.
+  Equivalent to `(deref (r/state-atom this))`"
+  [this]
+  (assert-component this)
+  (deref (state-atom this)))
+
+(defn set-state
+  "Merge component state with new-state.
+  Equivalent to `(swap! (state-atom this) merge new-state)`"
+  [this new-state]
+  (assert-component this)
+  (assert-new-state new-state)
+  (swap! (state-atom this) merge new-state))
+
+(defn props
+  "Returns the props passed to a component."
+  [this]
+  (assert-component this)
+  (comp/get-props this))
+  
 ```
 
 # Interop with React
