@@ -1,5 +1,7 @@
 # reagent-interop-with-react-taro
 
+* 思想：先跑起来安卓的Java代码，然后用互操作来逐一替换为Clojure
+* 一个最快跑起来的完整的CURD的Rails + React + Material UI 的 CURD的最简例子
 
 * [Reagent Interop With React](http://reagent-project.github.io/docs/master/InteropWithReact.html "Permalink to Interop with React")
 * [Taro](https://github.com/NervJS/taro)
