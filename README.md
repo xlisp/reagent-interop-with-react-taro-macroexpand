@@ -303,6 +303,16 @@ Let's call it an "externs file"!
     (as-class comp)))
 ```
 
+* goog.object
+
+```clojure
+;; [goog.object :as gobj]
+(def custom-theme
+  (createMuiTheme
+   #js {:palette #js {:primary #js {:main (gobj/get (.-red mui-colors) 100)}}}))
+   
+```
+
 # Interop with React
 
 A little understanding of what Reagent is doing really helps when trying to use React libraries and reagent together.
